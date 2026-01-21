@@ -1,0 +1,177 @@
+.price-comparison-container {
+  margin-top: 2rem;
+}
+
+.comparison-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.comparison-header h2 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+}
+
+.price-range {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  font-size: 1.1rem;
+}
+
+.price-range .lowest {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.price-range .highest {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.price-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.price-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent;
+}
+
+.price-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.price-card.best-price {
+  border-color: #28a745;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.store-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.store-name {
+  font-size: 1.3rem;
+  color: #333;
+  margin: 0;
+}
+
+.best-badge {
+  background: #28a745;
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.price-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.price-amount {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.currency {
+  font-size: 1rem;
+  color: #666;
+}
+
+.stock-info {
+  margin-bottom: 1rem;
+}
+
+.in-stock {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.out-of-stock {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.store-link {
+  display: inline-block;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.store-link:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.details-button,
+.predict-button {
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  font-weight: 500;
+}
+
+.details-button {
+  background: #667eea;
+  color: white;
+}
+
+.predict-button {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.details-button:hover,
+.predict-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .price-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .price-range {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
