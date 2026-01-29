@@ -8,6 +8,25 @@ import bcrypt
 db = SQLAlchemy()
 
 
+class Category(db.Model):
+    """Category model for organizing products."""
+    __tablename__ = 'categories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    image_url = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    products = db.relationship('Product', backref='category_obj', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'image_url': self.image_url,
+        }
+
+
 class User(db.Model):
     """User model for authentication."""
     __tablename__ = 'users'
@@ -48,7 +67,10 @@ class Product(db.Model):
     name = db.Column(db.String(200), nullable=False, index=True)
     normalized_name = db.Column(db.String(200), nullable=False, index=True)
     description = db.Column(db.Text)
+    # Legacy string category (kept for backward compatibility)
     category = db.Column(db.String(100), index=True)
+    # New normalized category system
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), index=True)
     image_url = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -64,7 +86,8 @@ class Product(db.Model):
             'id': self.id,
             'name': self.name,
             'description': self.description,
-            'category': self.category,
+            'category': (self.category_obj.name if self.category_obj else self.category),
+            'category_id': self.category_id,
             'image_url': self.image_url,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),

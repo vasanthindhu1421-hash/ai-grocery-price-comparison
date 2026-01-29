@@ -47,8 +47,16 @@ def search():
         from utils import normalize_product_name
         normalized_name = normalize_product_name(product_name)
         
-        # Check if product exists in database first (needed for cached data fallback)
+        # DB-first: try exact normalized match, then prefix/contains to avoid false 404s
         product = Product.query.filter_by(normalized_name=normalized_name).first()
+        if not product:
+            product = Product.query.filter(
+                Product.normalized_name.like(f'{normalized_name}%')
+            ).order_by(Product.created_at.asc()).first()
+        if not product:
+            product = Product.query.filter(
+                Product.normalized_name.like(f'%{normalized_name}%')
+            ).order_by(Product.created_at.asc()).first()
         
         if not product:
             product = Product(
@@ -104,9 +112,13 @@ def search():
                 use_cached = True
         
         if not prices_data:
+            # Never return 404 if we have a matching product in DB; return empty prices gracefully
             return jsonify({
-                'error': 'No prices found for this product. Please try a different search term.'
-            }), 404
+                'product': product.to_dict(),
+                'prices': [],
+                'warning': '⚠ Live data unavailable, showing last updated prices',
+                'message': f'No cached prices yet for {product.name}. Try again later.'
+            }), 200
         
         # Remove duplicates and sort by price
         unique_prices = {}
@@ -202,7 +214,7 @@ def search():
         }
         
         if use_cached:
-            response_data['warning'] = 'Live data unavailable, showing last updated prices'
+            response_data['warning'] = '⚠ Live data unavailable, showing last updated prices'
         
         return jsonify(response_data), 200
         
@@ -260,26 +272,17 @@ def suggest_products():
     try:
         query = request.args.get('q', '').strip()
         
-        if len(query) < 2:
+        # 1-character suggestions are required (e.g., "m" -> "milk")
+        if len(query) < 1:
             return jsonify({'suggestions': []}), 200
         
         # Search in normalized_name for better matching
         normalized_query = normalize_product_name(query)
         
-        # Use LIKE with index for performance (case-insensitive via normalized_name)
-        try:
-            products = Product.query.filter(
-                Product.normalized_name.like(f'%{normalized_query}%')
-            ).order_by(Product.name).limit(10).all()
-        except Exception as db_error:
-            # Fallback if normalized_name column doesn't exist - use case-insensitive search
-            try:
-                products = Product.query.filter(
-                    Product.name.like(f'%{query.lower()}%')
-                ).order_by(Product.name).limit(10).all()
-            except:
-                # Last resort - return empty
-                products = []
+        # Prefix match for true autocomplete behavior (m -> milk, mi -> milk)
+        products = Product.query.filter(
+            Product.normalized_name.like(f'{normalized_query}%')
+        ).order_by(Product.name).limit(10).all()
         
         # Remove duplicates by name
         seen_names = set()

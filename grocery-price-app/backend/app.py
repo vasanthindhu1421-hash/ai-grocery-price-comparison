@@ -76,6 +76,24 @@ def create_app():
                         db.session.commit()
                     except Exception as e:
                         print(f"Schema migration note: {str(e)}")
+                # Ensure index exists on normalized_name for autocomplete performance
+                try:
+                    with db.engine.connect() as conn:
+                        conn.execute(text('CREATE INDEX IF NOT EXISTS idx_products_normalized_name ON products (normalized_name)'))
+                        conn.commit()
+                except Exception as e:
+                    print(f"Index creation note: {str(e)}")
+
+                # Categories table + products.category_id column
+                try:
+                    product_columns = columns
+                    if 'category_id' not in product_columns:
+                        with db.engine.connect() as conn:
+                            conn.execute(text('ALTER TABLE products ADD COLUMN category_id INTEGER'))
+                            conn.execute(text('CREATE INDEX IF NOT EXISTS idx_products_category_id ON products (category_id)'))
+                            conn.commit()
+                except Exception as e:
+                    print(f"Category schema migration note: {str(e)}")
                 
                 # Handle Price table schema update (product_url, scraped_at)
                 price_columns = [col['name'] for col in inspector.get_columns('prices')]
