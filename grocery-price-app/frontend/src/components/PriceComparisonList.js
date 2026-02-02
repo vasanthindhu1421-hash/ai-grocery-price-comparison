@@ -89,7 +89,7 @@ const PriceComparisonList = ({ prices, productName, productId, onPredictionClick
                   <span className="out-of-stock">✗ Out of Stock</span>
                 )}
               </div>
-              {productUrl && (
+              {productUrl && productUrl !== '' && productUrl !== 'Currently unavailable' ? (
                 <a
                   href={productUrl}
                   target="_blank"
@@ -98,6 +98,8 @@ const PriceComparisonList = ({ prices, productName, productId, onPredictionClick
                 >
                   View on {store} →
                 </a>
+              ) : (
+                <span className="unavailable-link">Currently unavailable</span>
               )}
             </div>
           );

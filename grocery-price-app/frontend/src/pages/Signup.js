@@ -93,7 +93,7 @@ const Signup = ({ onLoginSuccess }) => {
                 disabled={loading}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
+                👁️
               </button>
             </div>
           </div>

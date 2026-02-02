@@ -2,7 +2,7 @@
 Product-related API routes.
 """
 from flask import Blueprint, request, jsonify
-from models import db, Product, Price, SearchHistory
+from models import db, Product, Price, SearchHistory, Category, PriceHistory
 from scrapers.price_scraper import fetch_prices
 from datetime import datetime
 from utils import token_required
@@ -168,10 +168,11 @@ def search():
                 ).first()
             
             product_url = price_info.get('link') or price_info.get('product_url', '')
+            price_value = round(float(price_info['price']), 2)
             
             if existing_price:
                 # Update existing price
-                existing_price.price = round(float(price_info['price']), 2)
+                existing_price.price = price_value
                 existing_price.currency = price_info.get('currency', 'INR')
                 if hasattr(existing_price, 'product_url'):
                     existing_price.product_url = product_url
@@ -187,7 +188,7 @@ def search():
                 price_data = {
                     'product_id': product.id,
                     'store_name': store_name,
-                    'price': round(float(price_info['price']), 2),
+                    'price': price_value,
                     'currency': price_info.get('currency', 'INR'),
                     'in_stock': price_info.get('in_stock', True),
                 }
@@ -204,6 +205,16 @@ def search():
                 
                 price = Price(**price_data)
                 db.session.add(price)
+            
+            # Save to price_history for AI predictions
+            price_history = PriceHistory(
+                product_id=product.id,
+                store_name=store_name,
+                price=price_value,
+                currency=price_info.get('currency', 'INR'),
+                recorded_at=current_time
+            )
+            db.session.add(price_history)
         
         db.session.commit()
         
@@ -298,4 +309,68 @@ def suggest_products():
         # Return empty suggestions on error instead of crashing
         print(f"Error in suggest_products: {str(e)}")
         return jsonify({'suggestions': []}), 200
+
+
+@product_bp.route('/categories', methods=['GET'])
+@token_required
+def get_categories():
+    """
+    Get all product categories.
+    Requires authentication.
+    """
+    try:
+        categories = Category.query.order_by(Category.name).all()
+        return jsonify({
+            'categories': [cat.to_dict() for cat in categories]
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@product_bp.route('/products/by-category/<int:category_id>', methods=['GET'])
+@token_required
+def get_products_by_category(category_id):
+    """
+    Get products by category ID.
+    Requires authentication.
+    
+    Args:
+        category_id: ID of the category
+    """
+    try:
+        category = Category.query.get_or_404(category_id)
+        products = Product.query.filter_by(category_id=category_id).order_by(Product.name).all()
+        
+        # Get latest prices for each product
+        products_with_prices = []
+        for product in products:
+            product_dict = product.to_dict()
+            # Get latest prices
+            latest_prices = Price.query.filter_by(product_id=product.id).order_by(
+                Price.scraped_at.desc()
+            ).limit(5).all()
+            
+            if not latest_prices:
+                # Fallback for old schema
+                latest_prices = Price.query.filter_by(product_id=product.id).order_by(
+                    Price.recorded_at.desc()
+                ).limit(5).all()
+            
+            # Group by store and get latest price per store
+            store_prices = {}
+            for price in latest_prices:
+                if price.store_name not in store_prices:
+                    store_prices[price.store_name] = price.to_dict()
+            
+            product_dict['latest_prices'] = list(store_prices.values())
+            products_with_prices.append(product_dict)
+        
+        return jsonify({
+            'category': category.to_dict(),
+            'products': products_with_prices,
+            'count': len(products_with_prices)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 

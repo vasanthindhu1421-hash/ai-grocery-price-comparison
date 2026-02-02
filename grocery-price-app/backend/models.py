@@ -130,6 +130,32 @@ class Price(db.Model):
         }
 
 
+class PriceHistory(db.Model):
+    """Price history model for AI predictions."""
+    __tablename__ = 'price_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
+    store_name = db.Column(db.String(100), nullable=False, index=True)
+    price = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(10), default='INR')
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    
+    # Relationships
+    product = db.relationship('Product', backref='price_history_records', lazy=True)
+    
+    def to_dict(self):
+        """Convert price history to dictionary."""
+        return {
+            'id': self.id,
+            'product_id': self.product_id,
+            'store_name': self.store_name,
+            'price': self.price,
+            'currency': self.currency,
+            'recorded_at': self.recorded_at.isoformat()
+        }
+
+
 class SearchHistory(db.Model):
     """Search history model to track user searches."""
     __tablename__ = 'search_history'

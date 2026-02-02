@@ -15,8 +15,8 @@ const SearchBar = ({ onSearch, loading = false }) => {
   const debounceTimerRef = useRef(null);
 
   useEffect(() => {
-    // Debounce API calls (300ms)
-    if (query.trim().length >= 2) {
+    // Debounce API calls (300ms) - support 1 character autosuggest
+    if (query.trim().length >= 1) {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }

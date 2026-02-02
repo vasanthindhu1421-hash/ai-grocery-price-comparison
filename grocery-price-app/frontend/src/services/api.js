@@ -149,7 +149,7 @@ export const logout = async () => {
 
 /**
  * Get product suggestions for autocomplete.
- * @param {string} query - Partial product name (min 2 characters)
+ * @param {string} query - Partial product name (min 1 character)
  * @returns {Promise} API response with suggestions
  */
 export const getProductSuggestions = async (query) => {
@@ -160,6 +160,33 @@ export const getProductSuggestions = async (query) => {
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to get suggestions');
+  }
+};
+
+/**
+ * Get all categories.
+ * @returns {Promise} API response with categories
+ */
+export const getCategories = async () => {
+  try {
+    const response = await api.get('/categories');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Failed to get categories');
+  }
+};
+
+/**
+ * Get products by category ID.
+ * @param {number} categoryId - ID of the category
+ * @returns {Promise} API response with products
+ */
+export const getProductsByCategory = async (categoryId) => {
+  try {
+    const response = await api.get(`/products/by-category/${categoryId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Failed to get products by category');
   }
 };
 

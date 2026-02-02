@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from datetime import datetime, timedelta
 from typing import Dict, List
-from models import Price
+from models import Price, PriceHistory
 
 
 def predict_price_from_history(historical_prices: List[Price], store_name: str = None) -> Dict:
@@ -26,12 +26,15 @@ def predict_price_from_history(historical_prices: List[Price], store_name: str =
             'available_records': len(historical_prices)
         }
     
-    # Extract prices and timestamps (use scraped_at if available, fallback to recorded_at)
+    # Extract prices and timestamps
+    # Handle both PriceHistory and Price objects
     prices = [float(price.price) for price in historical_prices]
     timestamps = []
     for price in historical_prices:
-        # Try scraped_at first, fallback to recorded_at
-        if hasattr(price, 'scraped_at') and price.scraped_at:
+        # PriceHistory uses recorded_at, Price uses scraped_at or recorded_at
+        if isinstance(price, PriceHistory):
+            timestamps.append(price.recorded_at)
+        elif hasattr(price, 'scraped_at') and price.scraped_at:
             timestamps.append(price.scraped_at)
         elif hasattr(price, 'recorded_at') and price.recorded_at:
             timestamps.append(price.recorded_at)

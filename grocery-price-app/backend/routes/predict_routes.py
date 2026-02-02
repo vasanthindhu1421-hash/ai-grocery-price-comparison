@@ -3,7 +3,7 @@ Price prediction API routes.
 """
 from flask import Blueprint, request, jsonify
 from ml.price_predictor import predict_price_from_history
-from models import Product, Price
+from models import Product, Price, PriceHistory
 from utils import token_required
 
 predict_bp = Blueprint('predict', __name__, url_prefix='')
@@ -40,17 +40,31 @@ def predict():
         if not product:
             return jsonify({'error': 'Product not found'}), 404
         
-        # Get historical prices from database
-        price_query = Price.query.filter_by(product_id=product.id)
-        if store_name:
-            price_query = price_query.filter_by(store_name=store_name)
+        # Get historical prices from price_history table (preferred) or prices table (fallback)
+        historical_prices = []
         
-        # Use scraped_at if available, fallback to recorded_at for backward compatibility
-        try:
-            historical_prices = price_query.order_by(Price.scraped_at.asc()).all()
-        except:
-            # Fallback for old schema
-            historical_prices = price_query.order_by(Price.recorded_at.asc()).all()
+        # Try price_history first
+        price_history_query = PriceHistory.query.filter_by(product_id=product.id)
+        if store_name:
+            price_history_query = price_history_query.filter_by(store_name=store_name)
+        
+        historical_prices = price_history_query.order_by(PriceHistory.recorded_at.asc()).all()
+        
+        # Fallback to prices table if price_history is empty
+        if len(historical_prices) < 3:
+            price_query = Price.query.filter_by(product_id=product.id)
+            if store_name:
+                price_query = price_query.filter_by(store_name=store_name)
+            
+            # Use scraped_at if available, fallback to recorded_at for backward compatibility
+            try:
+                fallback_prices = price_query.order_by(Price.scraped_at.asc()).all()
+            except:
+                # Fallback for old schema
+                fallback_prices = price_query.order_by(Price.recorded_at.asc()).all()
+            
+            if len(fallback_prices) > len(historical_prices):
+                historical_prices = fallback_prices
         
         if len(historical_prices) < 3:
             return jsonify({
